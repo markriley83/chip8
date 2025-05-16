@@ -3,7 +3,7 @@
 #
 # Chip 8 emulator
 #
-# Inspiration (a a little help on a few opcodes) from http://www.multigesture.net/articles/how-to-write-an-emulator-chip-8-interpreter/
+# Inspiration (a little help on a few opcodes) from http://www.multigesture.net/articles/how-to-write-an-emulator-chip-8-interpreter/
 # List of opcodes and more information - https://en.wikipedia.org/wiki/CHIP-8#Virtual_machine_description
 # Function pointers - http://www.multigesture.net/wp-content/uploads/mirror/zenogais/FunctionPointers.htm
 #
@@ -147,7 +147,7 @@ class Chip8:
     # We have a failed instruction. Skip it, move on, but echo it out to the screen.
     def cpuNULL(self):
         # We are either not implementing an opcode, or there is a programming
-        # error, hopefully on the chip8 rom, and not here.
+        # error, hopefully on the src rom, and not here.
         print("Unkown Opcode %x" % self.opcode)
         self.program_counter += 2
 
@@ -268,9 +268,9 @@ class Chip8:
     # 8XY6 - Shifts VX right by 1. VF is set to LSB of VX before the shift.
     # Not really sure what the Y in this is for.
     def cpu8xx6(self):
-        self.v[0xF] = self.v[(self.opcode & 0xF00) >> 8] & 0x1;
-        self.v[(self.opcode & 0xF00) >> 8] = self.v[(self.opcode & 0xF00) >> 8] >> 0x1;
-        self.program_counter += 2;
+        self.v[0xF] = self.v[(self.opcode & 0xF00) >> 8] & 0x1
+        self.v[(self.opcode & 0xF00) >> 8] = self.v[(self.opcode & 0xF00) >> 8] >> 0x1
+        self.program_counter += 2
 
     # 8XY7 - Sets VX to the value of VY minus VX
     def cpu8xx7(self):
@@ -285,10 +285,10 @@ class Chip8:
     # 8XYE - Shifts VX left by 1. VF is set to MSB of VX before the shift.
     # Not really sure what the Y in this is for.
     def cpu8xxE(self):
-        self.v[0xF] = self.v[(self.opcode & 0xF00) >> 8] >> 7;
-        self.v[(self.opcode & 0xF00) >> 8] = self.v[(self.opcode & 0xF00) >> 8] << 1;
+        self.v[0xF] = self.v[(self.opcode & 0xF00) >> 8] >> 7
+        self.v[(self.opcode & 0xF00) >> 8] = self.v[(self.opcode & 0xF00) >> 8] << 1
         self.v[(self.opcode & 0xF00) >> 8] = self.v[(self.opcode & 0xF00) >> 8] & 0xFF
-        self.program_counter += 2;
+        self.program_counter += 2
 
     # 9XY0 - Skips the next instruction if VX doesn't equal VY
     def cpu9xxx(self):
@@ -412,9 +412,9 @@ class Chip8:
     # This might possibly bug as it will accept any final 4 bit value, and not just 3
     # Taken from elsewhere
     def cpuFx3x(self):
-        self.memory[self.i] = self.v[(self.opcode & 0xF00) >> 8] / 100;
-        self.memory[self.i + 1] = (self.v[(self.opcode & 0xF00) >> 8] / 10) % 10;
-        self.memory[self.i + 2] = (self.v[(self.opcode & 0xF00) >> 8] % 100) % 10;
+        self.memory[self.i] = self.v[(self.opcode & 0xF00) >> 8] / 100
+        self.memory[self.i + 1] = (self.v[(self.opcode & 0xF00) >> 8] / 10) % 10
+        self.memory[self.i + 2] = (self.v[(self.opcode & 0xF00) >> 8] % 100) % 10
         self.program_counter += 2
 
     # FX55 - Stores V0 to VX in memory starting at address I

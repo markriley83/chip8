@@ -1,0 +1,9 @@
+[project]
+name = "chip8"
+version = "0.1.0"
+description = "A simple Chip 8 emulator"
+requires-python = ">=3.13"
+dependencies = [
+    "numpy",
+    "pyopengl",
+]

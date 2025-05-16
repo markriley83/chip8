@@ -6,12 +6,15 @@
 # pretty much copied from http://www.multigesture.net/articles/how-to-write-an-emulator-chip-8-interpreter/
 #
 #####
+import sys
+import time
+import src
+
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
 from OpenGL.GL import *
-import sys
-import time
-import chip8
+
+from chip8 import Chip8
 
 window_name = 'Chip8 Emulator'
 screen_width = 64
@@ -27,7 +30,7 @@ def main():
     if not sys.argv[1]:
         print("You must specify game to load")
 
-    my_chip8 = chip8.Chip8()
+    my_chip8 = Chip8()
     my_chip8.initialise()
     my_chip8.load_game(sys.argv[1])
 
@@ -49,13 +52,13 @@ def update_screen():
     for y in range(0, my_chip8.screen_height):
         for x in range(0, my_chip8.screen_width):
             if my_chip8.graphics[(y * my_chip8.screen_width) + x] == 1:
-                glColor3f(1.0,1.0,1.0);
-                glBegin(GL_QUADS);
-                glVertex3f((x * modifier) + 0.0,      (y * modifier) + 0.0, 0.0);
-                glVertex3f((x * modifier) + 0.0,      (y * modifier) + modifier, 0.0);
-                glVertex3f((x * modifier) + modifier, (y * modifier) + modifier, 0.0);
-                glVertex3f((x * modifier) + modifier, (y * modifier) + 0.0, 0.0);
-                glEnd();
+                glColor3f(1.0,1.0,1.0)
+                glBegin(GL_QUADS)
+                glVertex3f((x * modifier) + 0.0, (y * modifier) + 0.0, 0.0)
+                glVertex3f((x * modifier) + 0.0, (y * modifier) + modifier, 0.0)
+                glVertex3f((x * modifier) + modifier, (y * modifier) + modifier, 0.0)
+                glVertex3f((x * modifier) + modifier, (y * modifier) + 0.0, 0.0)
+                glEnd()
 
 def display():
     start = time.clock() # get current time for timing purposes.

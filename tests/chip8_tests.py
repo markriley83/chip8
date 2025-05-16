@@ -1,10 +1,4 @@
-#####
-#
-# Tests for chip8 emulator
-#
-#####
-from nose.tools import *
-from chip8 import chip8
+from src import chip8
 import random
 
 def setup():
@@ -26,7 +20,7 @@ def test_0NNN():
     my_chip8.memory[0x200] = 0x0F
     my_chip8.memory[0x201] = 0xFF
     my_chip8.emulate_cycle()
-    pass
+
 
 # Clear the screen
 # Set the video memory to random data, and then test the opcode to
@@ -203,7 +197,6 @@ def test_7XNN_2():
     my_chip8.memory[0x200] = 0x74
     my_chip8.memory[0x201] = 0xFF
     my_chip8.emulate_cycle()
-    print "%x" % my_chip8.v[4]
     assert my_chip8.program_counter == 0x202
     assert my_chip8.v[4] == 0xFE
 
