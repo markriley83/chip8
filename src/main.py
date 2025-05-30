@@ -1,18 +1,23 @@
-#!/bin/env python
-#####
-#
-# Chip 8 emulator
-#
-# pretty much copied from http://www.multigesture.net/articles/how-to-write-an-emulator-chip-8-interpreter/
-#
-#####
+#!/usr/bin/env python3
 import sys
-import time
-import src
 
-from OpenGL.GLUT import *
-from OpenGL.GLU import *
-from OpenGL.GL import *
+import glfw
+from OpenGL.GL import (
+    GL_COLOR_BUFFER_BIT,
+    GL_QUADS,
+    glClear,
+    glClearColor,
+    glBegin,
+    glEnd,
+    glColor3f,
+    glVertex3f,
+    glViewport,
+    glMatrixMode,
+    GL_PROJECTION,
+    glLoadIdentity,
+    glOrtho,
+    GL_MODELVIEW,
+)
 
 from chip8 import Chip8
 
@@ -25,30 +30,51 @@ display_height = screen_height * modifier
 screen_data = [[[0]*3]*screen_width]*screen_height
 
 def main():
-    global my_chip8
+    if not glfw.init():
+        raise Exception("GLFW initialisation failed")
 
-    if not sys.argv[1]:
-        print("You must specify game to load")
+    window = glfw.create_window(
+        display_width,
+        display_height,
+        window_name,
+        None,
+        None,
+    )
 
+    if not window:
+        glfw.terminate()
+        raise Exception("GLFW window creation failed")
+
+    glfw.make_context_current(window)
+    glClearColor(0.1, 0.2, 0.3, 1.0)
+
+    # global my_chip8
     my_chip8 = Chip8()
     my_chip8.initialise()
     my_chip8.load_game(sys.argv[1])
 
-    glutInit(sys.argv)
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA)
-    glutInitWindowSize(display_width, display_height)
-    glutCreateWindow(window_name)
+    while not glfw.window_should_close(window):
+        glfw.poll_events()
+        glClear(GL_COLOR_BUFFER_BIT)
+        display(my_chip8)
+        glfw.swap_buffers(window)
 
-    glutDisplayFunc(display)
+    glfw.terminate()
 
-    glutIdleFunc(display)
-    glutReshapeFunc(reshape_window)
-    glutKeyboardFunc(keyboard_down)
-    glutKeyboardUpFunc(keyboard_up)
+    # glutInit(sys.argv)
+    # glutInitDisplayMode(GLUT_RGBA)
+    #
+    # glutInitWindowSize(display_width, display_height)
+    # win = glutCreateWindow(window_name)
+    # glutDisplayFunc(display)
+    # glutIdleFunc(display)
+    # glutReshapeFunc(reshape_window)
+    # glutKeyboardFunc(keyboard_down)
+    # glutKeyboardUpFunc(keyboard_up)
 
-    glutMainLoop()
+    # glutMainLoop()
 
-def update_screen():
+def update_screen(my_chip8):
     for y in range(0, my_chip8.screen_height):
         for x in range(0, my_chip8.screen_width):
             if my_chip8.graphics[(y * my_chip8.screen_width) + x] == 1:
@@ -60,29 +86,36 @@ def update_screen():
                 glVertex3f((x * modifier) + modifier, (y * modifier) + 0.0, 0.0)
                 glEnd()
 
-def display():
-    start = time.clock() # get current time for timing purposes.
+def iterate():
+    glViewport(0, 0, screen_width, screen_height)
+    glMatrixMode(GL_PROJECTION)
+    glLoadIdentity()
+    glOrtho(0, screen_height, 0, screen_height, 1)
+    glMatrixMode(GL_MODELVIEW)
+    glLoadIdentity()
+
+def display(my_chip8):
+    # start = time.clock() # get current time for timing purposes.
     # emulate chip 8 cycle
     my_chip8.emulate_cycle()
     if my_chip8.draw_flag:
-        glClear(GL_COLOR_BUFFER_BIT)
-        update_screen()
-        glutSwapBuffers()
+        update_screen(my_chip8)
         my_chip8.draw_flag = False
-    if (1.0 / my_chip8.ops_per_second - (time.clock() - start)) > 0:
-        time.sleep(1.0 / my_chip8.ops_per_second - (time.clock() - start)) # We sleep a bit to keep timing right
+    # if (1.0 / my_chip8.ops_per_second - (time.clock() - start)) > 0:
+    #     time.sleep(1.0 / my_chip8.ops_per_second - (time.clock() - start)) # We sleep a bit to keep timing right
 
 def reshape_window(w, h):
-    glClearColor(0.0, 0.0, 0.0, 0.0)
-    glMatrixMode(GL_PROJECTION)
-    glLoadIdentity()
-    gluOrtho2D(0, w, h, 0)
-    glMatrixMode(GL_MODELVIEW)
-    glViewport(0, 0, w, h)
-
-    # Resize quad
-    display_width = w
-    display_height = h
+    # glClearColor(0.0, 0.0, 0.0, 0.0)
+    # glMatrixMode(GL_PROJECTION)
+    # glLoadIdentity()
+    # gluOrtho2D(0, w, h, 0)
+    # glMatrixMode(GL_MODELVIEW)
+    # glViewport(0, 0, w, h)
+    #
+    # # Resize quad
+    # display_width = w
+    # display_height = h
+    ...
 
 def keyboard_down(key, x, y):
     if key == '\033': # esc

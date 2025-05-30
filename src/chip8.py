@@ -1,15 +1,5 @@
-#!/bin/env python
-#####
-#
-# Chip 8 emulator
-#
-# Inspiration (a little help on a few opcodes) from http://www.multigesture.net/articles/how-to-write-an-emulator-chip-8-interpreter/
-# List of opcodes and more information - https://en.wikipedia.org/wiki/CHIP-8#Virtual_machine_description
-# Function pointers - http://www.multigesture.net/wp-content/uploads/mirror/zenogais/FunctionPointers.htm
-#
-#####
 import sys
-import numpy
+import numpy as np
 import random
 
 class Chip8:
@@ -17,71 +7,72 @@ class Chip8:
     screen_height = 32
     ops_per_second = 60
 
-    fontset = [0xf0, 0x90, 0x90, 0x90, 0xf0, # 0
-               0x20, 0x60, 0x20, 0x20, 0x70, # 1
-               0xf0, 0x10, 0xf0, 0x80, 0xf0, # 2
-               0xf0, 0x10, 0xf0, 0x10, 0xf0, # 3
-               0x90, 0x90, 0xf0, 0x10, 0x10, # 4
-               0xf0, 0x80, 0xf0, 0x10, 0xf0, # 5
-               0xf0, 0x80, 0xf0, 0x90, 0xf0, # 6
-               0xf0, 0x10, 0x20, 0x40, 0x40, # 7
-               0xf0, 0x90, 0xf0, 0x90, 0xf0, # 8
-               0xf0, 0x90, 0xf0, 0x10, 0xf0, # 9
-               0xf0, 0x90, 0xf0, 0x90, 0x90, # A
-               0xe0, 0x90, 0xe0, 0x90, 0xe0, # B
-               0xf0, 0x80, 0x80, 0x80, 0xf0, # C
-               0xe0, 0x90, 0x90, 0x90, 0xe0, # D
-               0xf0, 0x80, 0xf0, 0x80, 0xf0, # E
-               0xf0, 0x80, 0xf0, 0x80, 0x80] # F
+    font_set = [
+        0xf0, 0x90, 0x90, 0x90, 0xf0,  # 0
+        0x20, 0x60, 0x20, 0x20, 0x70,  # 1
+        0xf0, 0x10, 0xf0, 0x80, 0xf0,  # 2
+        0xf0, 0x10, 0xf0, 0x10, 0xf0,  # 3
+        0x90, 0x90, 0xf0, 0x10, 0x10,  # 4
+        0xf0, 0x80, 0xf0, 0x10, 0xf0,  # 5
+        0xf0, 0x80, 0xf0, 0x90, 0xf0,  # 6
+        0xf0, 0x10, 0x20, 0x40, 0x40,  # 7
+        0xf0, 0x90, 0xf0, 0x90, 0xf0,  # 8
+        0xf0, 0x90, 0xf0, 0x10, 0xf0,  # 9
+        0xf0, 0x90, 0xf0, 0x90, 0x90,  # A
+        0xe0, 0x90, 0xe0, 0x90, 0xe0,  # B
+        0xf0, 0x80, 0x80, 0x80, 0xf0,  # C
+        0xe0, 0x90, 0x90, 0x90, 0xe0,  # D
+        0xf0, 0x80, 0xf0, 0x80, 0xf0,  # E
+        0xf0, 0x80, 0xf0, 0x80, 0x80,  # F
+    ]
 
     def initialise(self):
-        print("Initialising")
         self.reset()
         self.setup_opcode_pointers()
 
     def setup_opcode_pointers(self):
-        self.chip8_table = [self.cpu0xxx, self.cpu1xxx, self.cpu2xxx,
-                            self.cpu3xxx, self.cpu4xxx, self.cpu5xxx,
-                            self.cpu6xxx, self.cpu7xxx, self.cpu8xxx,
-                            self.cpu9xxx, self.cpuAxxx, self.cpuBxxx,
-                            self.cpuCxxx, self.cpuDxxx, self.cpuExxx,
-                            self.cpuFxxx]
-        self.chip8_system = [self.cpu00E0, self.cpuNULL, self.cpuNULL,
-                             self.cpuNULL, self.cpuNULL, self.cpuNULL,
-                             self.cpuNULL, self.cpuNULL, self.cpuNULL,
-                             self.cpuNULL, self.cpuNULL, self.cpuNULL,
-                             self.cpuNULL, self.cpuNULL, self.cpu00EE,
-                             self.cpuNULL]
-        self.chip8_arithmetic = [self.cpu8xx, self.cpu8xx1, self.cpu8xx2,
-                                 self.cpu8xx3, self.cpu8xx4, self.cpu8xx5,
-                                 self.cpu8xx6, self.cpu8xx7, self.cpuNULL,
-                                 self.cpuNULL, self.cpuNULL, self.cpuNULL,
-                                 self.cpuNULL, self.cpuNULL, self.cpu8xxE,
-                                 self.cpuNULL]
-        self.chip8_skip = [self.cpuNULL, self.cpuNULL, self.cpuNULL,
-                           self.cpuNULL, self.cpuNULL, self.cpuNULL,
-                           self.cpuNULL, self.cpuNULL, self.cpuNULL,
-                           self.cpuEx9x, self.cpuExAx, self.cpuNULL,
-                           self.cpuNULL, self.cpuNULL, self.cpuNULL,
-                           self.cpuNULL]
-        self.chip8_misc = [self.cpuFxx, self.cpuFx1x, self.cpuFx2x,
-                           self.cpuFx3x, self.cpuNULL, self.cpuFx5x,
-                           self.cpuFx6x, self.cpuNULL, self.cpuNULL,
-                           self.cpuNULL, self.cpuNULL, self.cpuNULL,
-                           self.cpuNULL, self.cpuNULL, self.cpuNULL,
-                           self.cpuNULL]
-        self.chip8_fxn = [self.cpuNULL, self.cpuNULL, self.cpuNULL,
-                           self.cpuNULL, self.cpuNULL, self.cpuNULL,
-                           self.cpuNULL, self.cpuFx7, self.cpuNULL,
-                           self.cpuNULL, self.cpuFxA, self.cpuNULL,
-                           self.cpuNULL, self.cpuNULL, self.cpuNULL,
-                           self.cpuNULL]
-        self.chip8_fx1n = [self.cpuNULL, self.cpuNULL, self.cpuNULL,
-                           self.cpuNULL, self.cpuNULL, self.cpuFx15,
-                           self.cpuNULL, self.cpuNULL, self.cpuFx18,
-                           self.cpuNULL, self.cpuNULL, self.cpuNULL,
-                           self.cpuNULL, self.cpuNULL, self.cpuFx1E,
-                           self.cpuNULL]
+        self.chip8_table = [
+            self.cpu0xxx, self.cpu1xxx, self.cpu2xxx, self.cpu3xxx,
+            self.cpu4xxx, self.cpu5xxx, self.cpu6xxx, self.cpu7xxx,
+            self.cpu8xxx, self.cpu9xxx, self.cpuAxxx, self.cpuBxxx,
+            self.cpuCxxx, self.cpuDxxx, self.cpuExxx, self.cpuFxxx,
+        ]
+        self.chip8_system = [
+            self.cpu00E0, self.cpuNULL, self.cpuNULL, self.cpuNULL,
+            self.cpuNULL, self.cpuNULL, self.cpuNULL, self.cpuNULL,
+            self.cpuNULL, self.cpuNULL, self.cpuNULL, self.cpuNULL,
+            self.cpuNULL, self.cpuNULL, self.cpu00EE, self.cpuNULL,
+        ]
+        self.chip8_arithmetic = [
+            self.cpu8xx, self.cpu8xx1, self.cpu8xx2, self.cpu8xx3,
+            self.cpu8xx4, self.cpu8xx5, self.cpu8xx6, self.cpu8xx7,
+            self.cpuNULL, self.cpuNULL, self.cpuNULL, self.cpuNULL,
+            self.cpuNULL, self.cpuNULL, self.cpu8xxE, self.cpuNULL,
+        ]
+        self.chip8_skip = [
+            self.cpuNULL, self.cpuNULL, self.cpuNULL, self.cpuNULL,
+            self.cpuNULL, self.cpuNULL, self.cpuNULL, self.cpuNULL,
+            self.cpuNULL, self.cpuEx9x, self.cpuExAx, self.cpuNULL,
+            self.cpuNULL, self.cpuNULL, self.cpuNULL, self.cpuNULL,
+        ]
+        self.chip8_misc = [
+            self.cpuFxx, self.cpuFx1x, self.cpuFx2x, self.cpuFx3x,
+            self.cpuNULL, self.cpuFx5x, self.cpuFx6x, self.cpuNULL,
+            self.cpuNULL, self.cpuNULL, self.cpuNULL, self.cpuNULL,
+            self.cpuNULL, self.cpuNULL, self.cpuNULL, self.cpuNULL,
+        ]
+        self.chip8_fxn = [
+            self.cpuNULL, self.cpuNULL, self.cpuNULL, self.cpuNULL,
+            self.cpuNULL, self.cpuNULL, self.cpuNULL, self.cpuFx7,
+            self.cpuNULL, self.cpuNULL, self.cpuFxA, self.cpuNULL,
+            self.cpuNULL, self.cpuNULL, self.cpuNULL, self.cpuNULL,
+        ]
+        self.chip8_fx1n = [
+            self.cpuNULL, self.cpuNULL, self.cpuNULL, self.cpuNULL,
+            self.cpuNULL, self.cpuFx15, self.cpuNULL, self.cpuNULL,
+            self.cpuFx18, self.cpuNULL, self.cpuNULL, self.cpuNULL,
+            self.cpuNULL, self.cpuNULL, self.cpuFx1E, self.cpuNULL,
+        ]
 
     def reset(self):
         self.program_counter = 0x200 # Program starts at 0x200
@@ -97,7 +88,7 @@ class Chip8:
 
         self.memory = [0] * 4096
 
-        for (counter, font) in enumerate(self.fontset):
+        for (counter, font) in enumerate(self.font_set):
             self.memory[counter] = font
 
         self.delay_timer = 0
@@ -115,9 +106,9 @@ class Chip8:
             counter = 0
             while True:
                 byte = game_file.read(1)
-                if byte == '':
+                if byte == b'':
                     break
-                self.memory[0x200 + counter] = numpy.fromstring(byte, dtype=numpy.uint8, count=1)
+                self.memory[0x200 + counter] = np.fromstring(bytes(byte), dtype=np.uint8, count=1)
                 counter += 1
 
     def emulate_cycle(self):
@@ -137,8 +128,8 @@ class Chip8:
         self.chip8_table[(self.opcode & 0xF000) >> 12]()
 
     def fetch_opcode(self):
-        opcode1 = numpy.uint16(self.memory[self.program_counter])
-        opcode2 = numpy.uint16(self.memory[self.program_counter + 1])
+        opcode1 = int(np.uint16(self.memory[self.program_counter]))
+        opcode2 = int(np.uint16(self.memory[self.program_counter + 1]))
         self.opcode = opcode1 << 8 | opcode2
 
     def set_keys(self):
@@ -148,7 +139,7 @@ class Chip8:
     def cpuNULL(self):
         # We are either not implementing an opcode, or there is a programming
         # error, hopefully on the src rom, and not here.
-        print("Unkown Opcode %x" % self.opcode)
+        print("Unknown Opcode %x" % self.opcode)
         self.program_counter += 2
 
     def cpu0xxx(self):
